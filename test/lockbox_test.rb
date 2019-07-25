@@ -159,6 +159,21 @@ class LockboxTest < Minitest::Test
     assert_equal message, new_box.decrypt(ciphertext)
   end
 
+  def test_rotation_padding_only
+    key = random_key
+    box = Lockbox.new(key: key)
+    message = "it works!"
+    ciphertext = box.encrypt(message)
+    new_box = Lockbox.new(key: key, padding: true, previous_versions: [{key: key}])
+    assert_equal message, new_box.decrypt(ciphertext)
+
+    # returning DecryptionError instead of PaddingError
+    # is for end-user convenience, not for security
+    assert_raises Lockbox::DecryptionError do
+      Lockbox.new(key: key, padding: true).decrypt(ciphertext)
+    end
+  end
+
   def test_inspect
     box = Lockbox.new(key: random_key)
     refute_includes box.inspect, "key"
